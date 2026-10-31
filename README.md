@@ -1,7 +1,7 @@
 # 🛡️ CheckMate (#AbHogaAsliHisab)
 > *A "No-Cost EMI" Truth Calculator & CCPA Dark Pattern Auditor for Indian Consumers*
 
-🔗 *Live Demo:* 
+🔗 *Live Demo:* https://site-cad463cd6e0748129f63863af4a85b71.freebuff.page/ 
 
 ---
 

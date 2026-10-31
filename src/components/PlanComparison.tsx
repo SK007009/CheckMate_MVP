@@ -63,14 +63,14 @@ export function PlanComparison({ rows, listedPrice, overrideNote, onSelect }: Pl
               difference below is purely the lender's rate, tenure, fee and GST. Ranked by total paid.
             </p>
           </div>
-          <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 px-4 py-3">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+          <div className="rounded-xl border border-blue-900/60 bg-blue-950/30 px-4 py-3">
+            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-blue-300">
               <TrendingDown size={12} /> Most economical
             </p>
             <p className="mt-1 text-sm font-semibold text-white">
               {cheapest.plan.lenderName} · {cheapest.calc.tenureMonths}m
             </p>
-            <p className="mt-0.5 text-xs tabular-nums text-emerald-200">
+            <p className="mt-0.5 text-xs tabular-nums text-blue-200">
               {formatINR(cheapest.calc.totalPaidViaEmi)} total ·{' '}
               {formatPercent(cheapestApr)} p.a.
             </p>
@@ -148,7 +148,7 @@ export function PlanComparison({ rows, listedPrice, overrideNote, onSelect }: Pl
                   <tr
                     key={row.plan.key}
                     className={`border-b border-blue-950/40 last:border-0 ${
-                      isBest ? 'bg-emerald-950/20' : 'hover:bg-[#080f1b]'
+                      isBest ? 'bg-blue-950/20' : 'hover:bg-[#080f1b]'
                     }`}
                   >
                     <td className="px-4 py-3">
@@ -168,7 +168,7 @@ export function PlanComparison({ rows, listedPrice, overrideNote, onSelect }: Pl
                               </span>
                             ) : null}
                             {isBest ? (
-                              <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-300">
+                              <span className="flex items-center gap-1 rounded-full bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-blue-300">
                                 <BadgeCheck size={9} /> Most economical
                               </span>
                             ) : null}
@@ -202,14 +202,14 @@ export function PlanComparison({ rows, listedPrice, overrideNote, onSelect }: Pl
                     </td>
                     <td
                       className={`px-3 py-3 text-right text-[12.5px] tabular-nums ${
-                        row.calc.hiddenExtraCostOverCash <= 1 ? 'text-emerald-300' : 'text-amber-300'
+                        row.calc.hiddenExtraCostOverCash <= 1 ? 'text-blue-300' : 'text-amber-300'
                       }`}
                     >
                       {formatINR(Math.max(0, row.calc.hiddenExtraCostOverCash))}
                     </td>
                     <td
                       className={`px-3 py-3 text-right text-[12.5px] font-semibold tabular-nums ${
-                        isBest ? 'text-emerald-300' : 'text-white'
+                        isBest ? 'text-blue-300' : 'text-white'
                       }`}
                     >
                       {formatPercent(row.calc.trueEffectiveAprPercent)}

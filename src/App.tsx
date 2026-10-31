@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { ChangeEvent, DragEvent, FormEvent } from 'react';
+import type { ChangeEvent, DragEvent } from 'react';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -10,11 +10,9 @@ import {
   KeyRound,
   Loader2,
   Menu,
-  Plus,
   ScanLine,
   ShieldCheck,
   Sliders,
-  Sparkles,
   Table2,
   Upload,
   X,
@@ -25,7 +23,6 @@ import {
   computeProcessingFeeBase,
   getAllBankProfiles,
   getBankProfileByKeyword,
-  registerNewBankProfile,
   resolveNominalRatePa,
 } from './data/bankPlansDb';
 import {
@@ -35,12 +32,13 @@ import {
 } from './lib/emiMathEngine';
 import { buildPlanOptions } from './lib/planTypes';
 import type { PlanOption } from './lib/planTypes';
+import { CustomEmiPanel } from './components/CustomEmiPanel';
+import { LiveBlueHoverBackground } from './components/LiveBlueHoverBackground';
 import { PlanComparison } from './components/PlanComparison';
 import { evaluateCompliance, generateNchDossier } from './lib/complianceJudge';
 import { formatINR, formatPercent } from './lib/format';
-import type { DemoPreset, ExtractedScreenshotData } from './services/visionScanner';
+import type { ExtractedScreenshotData } from './services/visionScanner';
 import {
-  DEMO_PRESETS,
   getStoredApiKey,
   scanCheckoutScreenshot,
   setStoredApiKey,
@@ -54,7 +52,7 @@ const severityStyles: Record<string, string> = {
   MEDIUM: 'border-blue-500/30 bg-blue-500/10 text-blue-200',
 };
 
-type MenuTab = 'DEMOS' | 'OVERRIDE' | 'BANKS';
+type MenuTab = 'CUSTOM_EMI' | 'BANKS';
 
 type RateSource = 'screenshot rate' | 'monthly EMI' | 'upfront discount' | 'lender database';
 
@@ -103,7 +101,7 @@ function readFilePreview(file: File): Promise<string> {
 export default function App() {
   /* ------------------------------ navigation ----------------------------- */
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeMenuTab, setActiveMenuTab] = useState<MenuTab>('DEMOS');
+  const [activeMenuTab, setActiveMenuTab] = useState<MenuTab>('CUSTOM_EMI');
 
   /* ------------------------------ scan state ----------------------------- */
   const [isScanning, setIsScanning] = useState(false);
@@ -111,40 +109,22 @@ export default function App() {
   const [scanError, setScanError] = useState<string | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedScreenshotData | null>(null);
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   /** false = the multi-option comparison page, true = one plan in detail. */
   const [showDetail, setShowDetail] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /* --------------------------- manual overrides -------------------------- */
-  const [customPrice, setCustomPrice] = useState<number | undefined>(undefined);
-  const [customTenure, setCustomTenure] = useState<number | undefined>(undefined);
-  const [customBankId, setCustomBankId] = useState('');
-  const [customProcFee, setCustomProcFee] = useState<number | undefined>(undefined);
   const [groqApiKey, setGroqApiKey] = useState(() => getStoredApiKey());
 
   /* ------------------------------ bank data ------------------------------ */
-  const [bankProfiles, setBankProfiles] = useState<BankEmiProfile[]>(() => getAllBankProfiles());
-  const [newBankName, setNewBankName] = useState('');
-  const [newBankRate, setNewBankRate] = useState('16');
-  const [newBankFee, setNewBankFee] = useState('199');
-  const [newBankGstOnInt, setNewBankGstOnInt] = useState(true);
-  const [bankFormError, setBankFormError] = useState<string | null>(null);
+  const [bankProfiles] = useState<BankEmiProfile[]>(() => getAllBankProfiles());
 
   /* ----------------------------- dispute state --------------------------- */
   const [isDisputeOpen, setIsDisputeOpen] = useState(false);
   const [copiedDispute, setCopiedDispute] = useState(false);
   const [complainantName, setComplainantName] = useState('');
   const disputeRef = useRef<HTMLTextAreaElement>(null);
-
-  function resetOverrides() {
-    setCustomPrice(undefined);
-    setCustomTenure(undefined);
-    setCustomBankId('');
-    setCustomProcFee(undefined);
-  }
 
   /* ------------------------------- scanning ------------------------------ */
   async function handleScreenshotFile(file: File) {
@@ -163,14 +143,12 @@ export default function App() {
     setIsScanning(true);
     setScanError(null);
     setScanStatus('Initializing the on-device OCR engine…');
-    resetOverrides();
 
     try {
       const result = await scanCheckoutScreenshot(file, groqApiKey, (message) =>
         setScanStatus(message),
       );
       setExtractedData(result);
-      setActivePresetId(null);
       setSelectedPlanIndex(0);
       setShowDetail(false);
     } catch (error) {
@@ -194,47 +172,25 @@ export default function App() {
     if (file) void handleScreenshotFile(file);
   }
 
-  function handleSelectDemoPreset(preset: DemoPreset) {
-    setIsMenuOpen(false);
-    setPreviewImageUrl(preset.mockScreenshotDataUrl);
-    setExtractedData(preset.extracted);
-    setActivePresetId(preset.id);
-    setSelectedPlanIndex(0);
-    setShowDetail(false);
-    setScanError(null);
-    setScanStatus('');
-    setIsScanning(false);
-    resetOverrides();
-  }
-
   function handleResetToHome() {
     setExtractedData(null);
     setPreviewImageUrl(null);
-    setActivePresetId(null);
     setSelectedPlanIndex(0);
     setShowDetail(false);
     setScanError(null);
     setScanStatus('');
     setIsScanning(false);
-    setCustomPrice(undefined);
-    setCustomTenure(undefined);
-    setCustomBankId('');
-    setCustomProcFee(undefined);
   }
 
   /* ------------------------------ plan data ------------------------------ */
   const plans = useMemo(
     () =>
       extractedData
-        ? buildPlanOptions(
-            extractedData,
-            getBankProfileByKeyword,
-            activePresetId ? 'preset' : 'screenshot',
-          )
+        ? buildPlanOptions(extractedData, getBankProfileByKeyword, 'screenshot')
         : [],
     // The registry is mutable, so a bank-list change must rebuild the plans.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [extractedData, activePresetId, bankProfiles],
+    [extractedData, bankProfiles],
   );
 
   const sneakedAddOnsTotal = useMemo(() => {
@@ -251,24 +207,13 @@ export default function App() {
     return preTickedTotal + extraDripTotal;
   }, [extractedData]);
 
-  /**
-   * Prices one plan with the deterministic engine. `applyManual` keeps the
-   * drawer's lender/tenure overrides on the plan being inspected only, so the
-   * comparison table always reflects each option's own terms. The price and fee
-   * overrides apply everywhere: they describe the shopper's inputs, not the plan.
-   */
-  function auditPlan(plan: PlanOption, applyManual: boolean) {
+  /** Prices one plan with the deterministic engine, from its own terms. */
+  function auditPlan(plan: PlanOption) {
     if (!extractedData) return null;
 
-    const bank =
-      (applyManual && customBankId
-        ? bankProfiles.find((entry) => entry.id === customBankId)
-        : undefined) ?? plan.profile;
-    const price = Math.max(1, customPrice ?? extractedData.listedProductPriceINR);
-    const tenure = Math.max(
-      1,
-      Math.round(applyManual ? (customTenure ?? plan.tenureMonths) : plan.tenureMonths),
-    );
+    const bank = plan.profile;
+    const price = Math.max(1, extractedData.listedProductPriceINR);
+    const tenure = Math.max(1, Math.round(plan.tenureMonths));
 
     const rateInfo = resolveAuditRate({
       statedRate: plan.nominalInterestRateShownPa,
@@ -281,13 +226,8 @@ export default function App() {
     });
 
     const screenshotFee = plan.processingFeeShownINR;
-    const fee = customProcFee ?? screenshotFee ?? computeProcessingFeeBase(bank, price);
-    const feeSource =
-      customProcFee !== undefined
-        ? 'manual override'
-        : screenshotFee !== undefined
-          ? 'screenshot'
-          : 'lender database';
+    const fee = screenshotFee ?? computeProcessingFeeBase(bank, price);
+    const feeSource = screenshotFee !== undefined ? 'screenshot' : 'lender database';
 
     try {
       const calc = calculateEmiTruth({
@@ -310,26 +250,16 @@ export default function App() {
 
   const activeAudit = useMemo(() => {
     const plan = plans[selectedPlanIndex] ?? plans[0];
-    return plan ? auditPlan(plan, true) : null;
+    return plan ? auditPlan(plan) : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    extractedData,
-    plans,
-    selectedPlanIndex,
-    customBankId,
-    customPrice,
-    customTenure,
-    customProcFee,
-    bankProfiles,
-    sneakedAddOnsTotal,
-  ]);
+  }, [extractedData, plans, selectedPlanIndex, bankProfiles, sneakedAddOnsTotal]);
 
   /** Every option on the page priced the same way, for the comparison table. */
   const comparisonRows = useMemo(
     () =>
       plans
         .map((plan, index) => {
-          const audit = auditPlan(plan, false);
+          const audit = auditPlan(plan);
           return audit
             ? {
                 index,
@@ -342,53 +272,12 @@ export default function App() {
         })
         .filter((row): row is NonNullable<typeof row> => row !== null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [extractedData, plans, customPrice, customProcFee, bankProfiles, sneakedAddOnsTotal],
+    [extractedData, plans, bankProfiles, sneakedAddOnsTotal],
   );
 
   // More than one rate/tenure/instalment on the page means the reader deserves a
   // cost comparison rather than a single-plan verdict.
   const compareMode = comparisonRows.length > 1 && !showDetail;
-
-  const presetSummaries = useMemo(
-    () =>
-      DEMO_PRESETS.map((preset) => {
-        const presetPlan = buildPlanOptions(
-          preset.extracted,
-          getBankProfileByKeyword,
-          'preset',
-        )[0];
-        if (!presetPlan) return { preset, apr: 0, bleed: 0 };
-        try {
-          const rateInfo = resolveAuditRate({
-            statedRate: presetPlan.nominalInterestRateShownPa,
-            upfrontDiscount: presetPlan.upfrontInterestDiscountShownINR,
-            monthlyEmi: presetPlan.monthlyEmiShownINR,
-            isNoCost: presetPlan.isMarkedNoCost,
-            price: preset.extracted.listedProductPriceINR,
-            tenureMonths: presetPlan.tenureMonths,
-            fallback: resolveNominalRatePa(presetPlan.profile, presetPlan.tenureMonths),
-          });
-          const calc = calculateEmiTruth({
-            listedProductPrice: preset.extracted.listedProductPriceINR,
-            tenureMonths: presetPlan.tenureMonths,
-            isAdvertisedNoCostEmi: presetPlan.isMarkedNoCost,
-            sneakedAddOnsTotal: preset.sneakedAddOnsTotal,
-            bankProfile: presetPlan.profile,
-            overrideProcessingFeeINR: presetPlan.processingFeeShownINR,
-            overrideNominalRatePa: rateInfo.rate,
-          });
-          return {
-            preset,
-            apr: calc.trueEffectiveAprPercent,
-            bleed: calc.hiddenExtraCostOverCash,
-          };
-        } catch {
-          return { preset, apr: 0, bleed: 0 };
-        }
-      }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bankProfiles],
-  );
 
   const disputeLetterText = useMemo(() => {
     if (!extractedData || !activeAudit) return '';
@@ -401,63 +290,6 @@ export default function App() {
       platformOverride: extractedData.platformName,
     });
   }, [activeAudit, extractedData, complainantName]);
-
-  /* ----------------------------- bank registry --------------------------- */
-  function handleAddCustomBank(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBankFormError(null);
-
-    const name = newBankName.trim();
-    const rate = Number.parseFloat(newBankRate);
-    const fee = Number.parseFloat(newBankFee);
-
-    if (!name) {
-      setBankFormError('Enter the lender name shown on the checkout page.');
-      return;
-    }
-    if (!Number.isFinite(rate) || rate < 0 || rate > 60) {
-      setBankFormError('Nominal rate must be between 0% and 60% per annum.');
-      return;
-    }
-    if (!Number.isFinite(fee) || fee < 0 || fee > 5000) {
-      setBankFormError('Processing fee must be between ₹0 and ₹5,000.');
-      return;
-    }
-
-    const slug =
-      name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || 'lender';
-
-    const profile: BankEmiProfile = {
-      id: `custom-${slug}-${Date.now()}`,
-      displayName: name,
-      aliases: [name.toLowerCase(), slug.replace(/-/g, ' ')],
-      lenderType: newBankGstOnInt ? 'CREDIT_CARD' : 'NBFC_CARD',
-      processingFee: {
-        type: 'FLAT',
-        flatAmountINR: fee,
-        percentageRate: 0,
-        gstApplicableOnFee: true,
-      },
-      nominalInterestRatesPa: { 3: rate, 6: rate, 9: rate, 12: rate, 18: rate, 24: rate },
-      gstOnMonthlyInterestPercent: newBankGstOnInt ? 18 : 0,
-      foreclosurePenaltyPercent: 3,
-      rewardPointsBlockedOnEmi: true,
-      hiddenClauses: ['Custom lender profile added through the CheckMate database drawer.'],
-    };
-
-    try {
-      registerNewBankProfile(profile);
-      setBankProfiles(getAllBankProfiles());
-      setCustomBankId(profile.id);
-      setNewBankName('');
-      setActiveMenuTab('OVERRIDE');
-    } catch (error) {
-      setBankFormError((error as Error).message);
-    }
-  }
 
   /* -------------------------------- dispute ------------------------------ */
   async function copyDispute() {
@@ -488,7 +320,8 @@ export default function App() {
 
   /* --------------------------------- view -------------------------------- */
   return (
-    <div className="flex min-h-screen flex-col bg-[#050a13] font-sans text-white selection:bg-blue-600 selection:text-white">
+    <div className="relative flex min-h-screen flex-col font-sans text-white selection:bg-blue-600 selection:text-white">
+      <LiveBlueHoverBackground />
       <header className="sticky top-0 z-30 border-b border-blue-950/70 bg-[#03060c]/90 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
           <button
@@ -518,7 +351,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
+      <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         {!extractedData ? (
           <section className="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center py-8">
             <h1 className="text-center text-5xl font-black tracking-tight text-white sm:text-7xl">
@@ -548,7 +381,7 @@ export default function App() {
               className={`mt-10 w-full max-w-xl cursor-pointer rounded-2xl border-2 border-dashed px-6 py-14 text-center outline-none transition focus-visible:ring-2 focus-visible:ring-blue-500 ${
                 isDragging
                   ? 'border-blue-500 bg-blue-950/40'
-                  : 'border-blue-900/70 bg-[#050a13] hover:border-blue-600 hover:bg-[#07101d]'
+                  : 'border-blue-900/70 bg-[#050a13]/60 hover:border-blue-600 hover:bg-[#07101d]/80'
               }`}
             >
               {isScanning ? (
@@ -593,7 +426,7 @@ export default function App() {
                   <ArrowLeft size={14} /> Scan another screenshot
                 </button>
                 <span className="text-[11px] font-medium text-slate-500">
-                  {activePresetId ? 'Demo preset' : 'Read on-device'} ·{' '}
+                  Read on-device ·{' '}
                   {extractedData.emiOptionsShown.length} plan
                   {extractedData.emiOptionsShown.length === 1 ? '' : 's'} found
                 </span>
@@ -606,7 +439,8 @@ export default function App() {
                   </p>
                   <p className="mt-1 text-xs leading-relaxed">
                     The screenshot did not contain a lender, tenure and instalment the parser could
-                    use. Try a sharper image, or load a demo preset and edit the numbers manually.
+                    use. Try a sharper image, or enter the figures yourself under Custom EMI
+                    breakdown.
                   </p>
 
                   {extractedData.detectedLenderFees && extractedData.detectedLenderFees.length > 0 ? (
@@ -647,23 +481,7 @@ export default function App() {
                   {compareMode ? (
                     <PlanComparison
                       rows={comparisonRows}
-                      listedPrice={Math.max(
-                        1,
-                        customPrice ?? extractedData.listedProductPriceINR,
-                      )}
-                      overrideNote={
-                        customPrice !== undefined || customProcFee !== undefined
-                          ? `Manual overrides applied to every option: ${
-                              customPrice !== undefined
-                                ? `price ${formatINR(customPrice)}`
-                                : ''
-                            }${customPrice !== undefined && customProcFee !== undefined ? ' · ' : ''}${
-                              customProcFee !== undefined
-                                ? `processing fee ${formatINR(customProcFee)}`
-                                : ''
-                            }.`
-                          : undefined
-                      }
+                      listedPrice={Math.max(1, extractedData.listedProductPriceINR)}
                       onSelect={(index) => {
                         setSelectedPlanIndex(index);
                         setShowDetail(true);
@@ -715,7 +533,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => setShowDetail(false)}
-                            className="flex items-center gap-1.5 rounded-full border border-emerald-800/70 bg-emerald-950/30 px-3 py-1 text-[11px] font-semibold text-emerald-300 transition hover:border-emerald-600 hover:text-emerald-200"
+                            className="flex items-center gap-1.5 rounded-full border border-blue-800/70 bg-blue-950/30 px-3 py-1 text-[11px] font-semibold text-blue-300 transition hover:border-blue-600 hover:text-blue-200"
                           >
                             <Table2 size={12} /> Compare all {comparisonRows.length} options
                           </button>
@@ -723,12 +541,12 @@ export default function App() {
                         <button
                           type="button"
                           onClick={() => {
-                            setActiveMenuTab('OVERRIDE');
+                            setActiveMenuTab('CUSTOM_EMI');
                             setIsMenuOpen(true);
                           }}
                           className="flex items-center gap-1.5 rounded-full border border-blue-950/70 px-3 py-1 text-[11px] font-semibold text-slate-400 transition hover:border-blue-700 hover:text-white"
                         >
-                          <Sliders size={12} /> Edit values
+                          <Sliders size={12} /> Custom EMI breakdown
                         </button>
                       </div>
                     </div>
@@ -878,7 +696,7 @@ export default function App() {
                         {activeAudit.plan.isMarkedNoCost
                           ? 'The page claims No-Cost EMI but prints no rate or upfront discount, so the bank rate cannot be derived from the image. The stored lender rule is used.'
                           : 'The screenshot prints no interest rate, and its instalment does not imply one, so the stored lender rule is used.'}{' '}
-                        Override it under Edit values.
+                        Price your own plan under Custom EMI breakdown.
                       </p>
                     ) : null}
                   </section>
@@ -1007,7 +825,7 @@ export default function App() {
 
                         if (segments.length === 0) {
                           return (
-                            <p className="self-center rounded-xl border border-emerald-900/50 bg-emerald-950/20 px-4 py-3 text-[11px] leading-relaxed text-emerald-200/80">
+                            <p className="self-center rounded-xl border border-blue-900/50 bg-blue-950/20 px-4 py-3 text-[11px] leading-relaxed text-blue-200/80">
                               Nothing is charged above the cash price on this plan.
                             </p>
                           );
@@ -1183,7 +1001,7 @@ export default function App() {
                               ? 'text-rose-400'
                               : activeAudit.verdict.legalityScore < 85
                                 ? 'text-amber-300'
-                                : 'text-emerald-400'
+                                : 'text-blue-400'
                           }`}
                         >
                           {activeAudit.verdict.legalityScore}
@@ -1202,7 +1020,7 @@ export default function App() {
                             ? 'bg-rose-500'
                             : activeAudit.verdict.legalityScore < 85
                               ? 'bg-amber-400'
-                              : 'bg-emerald-500'
+                              : 'bg-blue-500'
                         }`}
                         style={{ width: `${activeAudit.verdict.legalityScore}%` }}
                       />
@@ -1213,7 +1031,7 @@ export default function App() {
                     </p>
 
                     {activeAudit.verdict.violations.length === 0 ? (
-                      <p className="mt-4 rounded-xl border border-emerald-900/60 bg-emerald-950/30 px-3 py-2 text-xs text-emerald-200">
+                      <p className="mt-4 rounded-xl border border-blue-900/60 bg-blue-950/30 px-3 py-2 text-xs text-blue-200">
                         No forbidden promotion pattern was found in this screenshot.
                       </p>
                     ) : (
@@ -1290,7 +1108,7 @@ export default function App() {
               <div>
                 <h2 className="text-base font-bold text-white">CheckMate control panel</h2>
                 <p className="text-xs text-slate-400">
-                  Demo scenarios, manual overrides and the lender database
+                  Custom EMI breakdown and the reference lender database
                 </p>
               </div>
               <button
@@ -1303,11 +1121,10 @@ export default function App() {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-1 border-b border-blue-950/70 bg-[#0a1322] p-2 text-xs font-semibold">
+            <div className="grid grid-cols-2 gap-1 border-b border-blue-950/70 bg-[#0a1322] p-2 text-xs font-semibold">
               {(
                 [
-                  { id: 'DEMOS', label: 'Demos', icon: Sparkles },
-                  { id: 'OVERRIDE', label: 'Customise', icon: Sliders },
+                  { id: 'CUSTOM_EMI', label: 'Custom EMI breakdown', icon: Sliders },
                   { id: 'BANKS', label: 'Banks DB', icon: Building2 },
                 ] as const
               ).map((tab) => {
@@ -1330,125 +1147,7 @@ export default function App() {
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto p-5">
-              {activeMenuTab === 'DEMOS' ? (
-                <>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    Preloaded scenarios
-                  </p>
-                  <div className="space-y-2.5">
-                    {presetSummaries.map(({ preset, apr, bleed }) => (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        onClick={() => handleSelectDemoPreset(preset)}
-                        className="w-full rounded-xl border border-blue-950/70 p-3.5 text-left transition hover:border-blue-400 hover:bg-blue-950/30"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="text-xs font-bold leading-snug text-white">
-                            {preset.title}
-                          </span>
-                          <span className="shrink-0 rounded-full bg-rose-950/40 px-2 py-0.5 text-[10px] font-bold text-rose-300">
-                            {formatPercent(apr)} APR
-                          </span>
-                        </div>
-                        <p className="mt-1 text-[11px] leading-relaxed text-slate-400">
-                          {preset.subtitle}
-                        </p>
-                        <p className="mt-1.5 text-[10.5px] font-semibold text-slate-300">
-                          +{formatINR(bleed)} over the cash price
-                        </p>
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-blue-950/70 pt-4">
-                    <label
-                      htmlFor="groq-key"
-                      className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300"
-                    >
-                      <KeyRound size={13} /> Optional Groq cloud-vision key
-                    </label>
-                    <input
-                      id="groq-key"
-                      type="password"
-                      value={groqApiKey}
-                      onChange={(event) => setGroqApiKey(event.target.value)}
-                      onBlur={() => setStoredApiKey(groqApiKey)}
-                      placeholder="gsk_… (leave blank for on-device OCR)"
-                      className={`mt-1.5 ${inputClass}`}
-                    />
-                    <p className="mt-1.5 text-[10.5px] leading-relaxed text-slate-400">
-                      Scanning always works without a key: Tesseract.js runs locally. A{' '}
-                      <span className="font-semibold">gsk_</span> key adds an open-weights
-                      Llama-4-Scout pass via Groq, falling back to local OCR on any error.
-                    </p>
-                  </div>
-                </>
-              ) : null}
-
-              {activeMenuTab === 'OVERRIDE' ? (
-                <>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                    Audit inputs
-                  </p>
-                  <div className="space-y-3">
-                    <OverrideNumber
-                      label="Listed price"
-                      prefix="₹"
-                      value={customPrice}
-                      placeholder={extractedData?.listedProductPriceINR ?? 79999}
-                      min={1}
-                      onChange={setCustomPrice}
-                    />
-                    <OverrideNumber
-                      label="Tenure"
-                      suffix="months"
-                      value={customTenure}
-                      placeholder={activeAudit?.plan.tenureMonths ?? 6}
-                      min={1}
-                      onChange={setCustomTenure}
-                    />
-                    <label className="block">
-                      <span className="text-[11px] font-semibold text-slate-300">Lender rule</span>
-                      <select
-                        value={customBankId}
-                        onChange={(event) => setCustomBankId(event.target.value)}
-                        className={`mt-1 ${inputClass}`}
-                      >
-                        <option value="">Auto-match from screenshot</option>
-                        {bankProfiles.map((bank) => (
-                          <option key={bank.id} value={bank.id}>
-                            {bank.displayName}
-                            {bank.isCustomUserAdded ? ' (custom)' : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <OverrideNumber
-                      label="Processing fee (ex-GST)"
-                      prefix="₹"
-                      value={customProcFee}
-                      placeholder={activeAudit?.calc.processingFeeBase ?? 299}
-                      min={0}
-                      onChange={setCustomProcFee}
-                    />
-                  </div>
-
-                  <div className="rounded-xl bg-[#050a13] p-3 text-[10.5px] leading-relaxed text-slate-400">
-                    Overrides recompute the audit immediately. The lender&apos;s reducing-balance
-                    rate always comes from the database, never from the advertised &ldquo;0%&rdquo;.
-                  </div>
-
-                  <ActionButton
-                    variant="outline"
-                    onClick={() => {
-                      resetOverrides();
-                    }}
-                  >
-                    Reset overrides
-                  </ActionButton>
-                </>
-              ) : null}
+              {activeMenuTab === 'CUSTOM_EMI' ? <CustomEmiPanel /> : null}
 
               {activeMenuTab === 'BANKS' ? (
                 <>
@@ -1479,75 +1178,34 @@ export default function App() {
                     </ul>
                   </div>
 
-                  <form onSubmit={handleAddCustomBank} className="space-y-3 border-t border-blue-950/70 pt-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                      Add a lender rule
-                    </p>
-                    <label className="block">
-                      <span className="text-[11px] font-semibold text-slate-300">Lender name</span>
-                      <input
-                        value={newBankName}
-                        onChange={(event) => setNewBankName(event.target.value)}
-                        placeholder="e.g. Kotak Mahindra Card"
-                        className={`mt-1 ${inputClass}`}
-                      />
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className="block">
-                        <span className="text-[11px] font-semibold text-slate-300">
-                          Nominal rate
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={60}
-                          step={0.01}
-                          value={newBankRate}
-                          onChange={(event) => setNewBankRate(event.target.value)}
-                          className={`mt-1 ${inputClass}`}
-                        />
-                      </label>
-                      <label className="block">
-                        <span className="text-[11px] font-semibold text-slate-300">
-                          Fee (ex-GST)
-                        </span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={5000}
-                          value={newBankFee}
-                          onChange={(event) => setNewBankFee(event.target.value)}
-                          className={`mt-1 ${inputClass}`}
-                        />
-                      </label>
-                    </div>
-                    <label className="flex items-start gap-2 text-[11px] leading-relaxed text-slate-400">
-                      <input
-                        type="checkbox"
-                        checked={newBankGstOnInt}
-                        onChange={(event) => setNewBankGstOnInt(event.target.checked)}
-                        className="mt-0.5 h-3.5 w-3.5 rounded border-blue-900/70 text-blue-400"
-                      />
-                      Credit-card style terms — charge 18% GST on monthly interest. Uncheck for an
-                      NBFC scheme where interest is GST-exempt.
-                    </label>
-
-                    {bankFormError ? (
-                      <p className="rounded-lg border border-rose-900/60 bg-rose-950/40 px-2.5 py-2 text-[10.5px] text-rose-300">
-                        {bankFormError}
-                      </p>
-                    ) : null}
-
-                    <ActionButton type="submit" variant="outline">
-                      <Plus size={13} /> Add lender to database
-                    </ActionButton>
-                    <p className="text-[10px] leading-relaxed text-slate-400">
-                      Custom rules persist in this browser&apos;s localStorage and become available
-                      in the audit selector immediately.
-                    </p>
-                  </form>
+                  <p className="mt-4 rounded-xl border border-blue-950/70 bg-[#050a13] p-3 text-[10.5px] leading-relaxed text-slate-400">
+                    Lender rates, fees and GST treatment are managed centrally and can only be
+                    added through the backend. This panel is read-only.
+                  </p>
                 </>
               ) : null}
+              <div className="border-t border-blue-950/70 pt-4">
+                <label
+                  htmlFor="groq-key"
+                  className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300"
+                >
+                  <KeyRound size={13} /> Optional Groq cloud-vision key
+                </label>
+                <input
+                  id="groq-key"
+                  type="password"
+                  value={groqApiKey}
+                  onChange={(event) => setGroqApiKey(event.target.value)}
+                  onBlur={() => setStoredApiKey(groqApiKey)}
+                  placeholder="gsk_… (leave blank for on-device OCR)"
+                  className={`mt-1.5 ${inputClass}`}
+                />
+                <p className="mt-1.5 text-[10.5px] leading-relaxed text-slate-400">
+                  Scanning always works without a key: Tesseract.js runs locally. A{' '}
+                  <span className="font-semibold">gsk_</span> key adds an open-weights
+                  Llama-4-Scout pass via Groq, falling back to local OCR on any error.
+                </p>
+              </div>
             </div>
           </aside>
         </div>
@@ -1662,34 +1320,3 @@ function LightModal(props: {
   );
 }
 
-function OverrideNumber(props: {
-  label: string;
-  value: number | undefined;
-  placeholder: number;
-  onChange: (value: number | undefined) => void;
-  prefix?: string;
-  suffix?: string;
-  min?: number;
-}) {
-  const { label, value, placeholder, onChange, prefix, suffix, min } = props;
-  return (
-    <label className="block">
-      <span className="text-[11px] font-semibold text-slate-300">{label}</span>
-      <div className="mt-1 flex items-center gap-2 rounded-lg border border-blue-900/70 bg-[#070d18] px-3 py-2 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100">
-        {prefix ? <span className="text-xs text-slate-400">{prefix}</span> : null}
-        <input
-          type="number"
-          min={min}
-          value={value ?? ''}
-          placeholder={String(placeholder)}
-          onChange={(event) => {
-            const raw = event.target.value;
-            onChange(raw === '' ? undefined : Number.parseFloat(raw));
-          }}
-          className="w-full bg-transparent text-sm tabular-nums text-white outline-none"
-        />
-        {suffix ? <span className="shrink-0 text-xs text-slate-400">{suffix}</span> : null}
-      </div>
-    </label>
-  );
-}

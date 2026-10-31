@@ -36,7 +36,7 @@ export function TruthPanel({
     {
       label: 'Loan principal',
       value: calc.loanPrincipal,
-      color: '#2ee6a8',
+      color: '#3b82f6',
       note: 'Actually financed by the lender',
     },
     {
@@ -269,7 +269,7 @@ export function TruthPanel({
                   <Td className="text-term-muted">{String(row.month).padStart(2, '0')}</Td>
                   <Td align="right">{formatINR(row.openingBalance)}</Td>
                   <Td align="right">{formatINR(row.emiBase)}</Td>
-                  <Td align="right" className="text-emerald-300">
+                  <Td align="right" className="text-blue-300">
                     {formatINR(row.principalComponent)}
                   </Td>
                   <Td align="right">{formatINR(row.interestComponent)}</Td>
@@ -288,7 +288,7 @@ export function TruthPanel({
                 <Td>Σ</Td>
                 <Td align="right">—</Td>
                 <Td align="right">{formatINR(calc.totalEmiBasePaid)}</Td>
-                <Td align="right" className="text-emerald-300">{formatINR(calc.loanPrincipal)}</Td>
+                <Td align="right" className="text-blue-300">{formatINR(calc.loanPrincipal)}</Td>
                 <Td align="right">{formatINR(calc.totalBankInterest)}</Td>
                 <Td align="right" className="text-rose-300">{formatINR(calc.totalGstOnInterest)}</Td>
                 <Td align="right" className="text-amber-300">
@@ -370,7 +370,7 @@ function ComparisonTable({
           {rows.map((row) => (
             <tr
               key={row.key}
-              className={`border-t border-term-line/70 ${row.highlight ? 'bg-emerald-400/5' : ''}`}
+              className={`border-t border-term-line/70 ${row.highlight ? 'bg-blue-400/5' : ''}`}
             >
               <Td>
                 <span className="block font-semibold text-term-text">{row.label}</span>

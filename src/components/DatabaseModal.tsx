@@ -179,7 +179,7 @@ export function DatabaseModal({
       </div>
 
       {notice ? (
-        <p className="mb-3 rounded-lg border border-emerald-400/30 bg-emerald-400/5 px-3 py-2 text-[11px] text-emerald-200">
+        <p className="mb-3 rounded-lg border border-blue-400/30 bg-blue-400/5 px-3 py-2 text-[11px] text-blue-200">
           {notice}
         </p>
       ) : null}
@@ -267,7 +267,7 @@ export function DatabaseModal({
                   value={importText}
                   onChange={(event) => setImportText(event.target.value)}
                   placeholder='[{"id":"kotak-cc","displayName":"Kotak Credit Card EMI","aliases":["kotak"],"lenderType":"CREDIT_CARD","processingFee":{"type":"FLAT","flatAmountINR":199,"percentageRate":0,"gstApplicableOnFee":true},"nominalInterestRatesPa":{"6":16,"12":16},"gstOnMonthlyInterestPercent":18,"foreclosurePenaltyPercent":3,"rewardPointsBlockedOnEmi":true,"hiddenClauses":["..."]}]'
-                  className="num h-28 w-full rounded-lg border border-term-line bg-black/35 p-3 text-[10.5px] text-term-text outline-none focus:border-emerald-400/50"
+                  className="num h-28 w-full rounded-lg border border-term-line bg-black/35 p-3 text-[10.5px] text-term-text outline-none focus:border-blue-400/50"
                 />
                 <Button className="mt-2" onClick={handleImport}>
                   <Upload size={12} /> Import profiles
@@ -281,7 +281,7 @@ export function DatabaseModal({
                   value={draft.id}
                   onChange={(event) => updateDraft({ id: event.target.value })}
                   placeholder="kotak-cc"
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="Display name">
@@ -289,7 +289,7 @@ export function DatabaseModal({
                   value={draft.displayName}
                   onChange={(event) => updateDraft({ displayName: event.target.value })}
                   placeholder="Kotak Mahindra Credit Card EMI"
-                  className="w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="OCR aliases (comma separated)">
@@ -297,14 +297,14 @@ export function DatabaseModal({
                   value={draft.aliases}
                   onChange={(event) => updateDraft({ aliases: event.target.value })}
                   placeholder="kotak, kotak bank, league"
-                  className="w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="Lender type">
                 <select
                   value={draft.lenderType}
                   onChange={(event) => updateDraft({ lenderType: event.target.value as LenderType })}
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 >
                   <option value="CREDIT_CARD">CREDIT_CARD</option>
                   <option value="DEBIT_CARD">DEBIT_CARD</option>
@@ -317,7 +317,7 @@ export function DatabaseModal({
                   onChange={(event) =>
                     updateDraft({ feeType: event.target.value as DraftBank['feeType'] })
                   }
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 >
                   <option value="FLAT">FLAT</option>
                   <option value="PERCENTAGE">PERCENTAGE</option>
@@ -329,12 +329,12 @@ export function DatabaseModal({
                   <input
                     value={draft.flatAmountINR}
                     onChange={(event) => updateDraft({ flatAmountINR: event.target.value })}
-                    className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                    className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                   />
                   <input
                     value={draft.percentageRate}
                     onChange={(event) => updateDraft({ percentageRate: event.target.value })}
-                    className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                    className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                   />
                 </div>
               </Field>
@@ -342,21 +342,21 @@ export function DatabaseModal({
                 <input
                   value={draft.ratesText}
                   onChange={(event) => updateDraft({ ratesText: event.target.value })}
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="GST on monthly interest %">
                 <input
                   value={draft.gstOnMonthlyInterestPercent}
                   onChange={(event) => updateDraft({ gstOnMonthlyInterestPercent: event.target.value })}
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="Foreclosure penalty %">
                 <input
                   value={draft.foreclosurePenaltyPercent}
                   onChange={(event) => updateDraft({ foreclosurePenaltyPercent: event.target.value })}
-                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                  className="num w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                 />
               </Field>
               <Field label="GST on processing fee">
@@ -382,7 +382,7 @@ export function DatabaseModal({
                   <textarea
                     value={draft.hiddenClausesText}
                     onChange={(event) => updateDraft({ hiddenClausesText: event.target.value })}
-                    className="h-20 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+                    className="h-20 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
                   />
                 </Field>
               </div>
@@ -403,7 +403,7 @@ export function DatabaseModal({
           {CONSUMER_PROTECTION_RULES.map((rule) => (
             <li key={rule.ruleId} className="rounded-xl border border-term-line bg-black/25 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="num text-[10px] tracking-widest text-emerald-300/80">{rule.ruleId}</span>
+                <span className="num text-[10px] tracking-widest text-blue-300/80">{rule.ruleId}</span>
                 <Badge
                   tone={
                     rule.severity === 'CRITICAL' ? 'danger' : rule.severity === 'HIGH' ? 'danger' : 'warn'

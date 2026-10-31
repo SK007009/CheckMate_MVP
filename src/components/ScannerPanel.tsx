@@ -115,7 +115,7 @@ export function ScannerPanel(props: ScannerPanelProps) {
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
           className={`relative flex min-h-[168px] flex-col items-center justify-center rounded-xl border border-dashed px-4 py-5 text-center transition ${
-            dragging ? 'border-emerald-400 bg-emerald-400/5' : 'border-term-line bg-black/25'
+            dragging ? 'border-blue-400 bg-blue-400/5' : 'border-term-line bg-black/25'
           }`}
         >
           {imagePreviewUrl ? (
@@ -145,12 +145,12 @@ export function ScannerPanel(props: ScannerPanelProps) {
                 </Button>
               </div>
               {scanStatus === 'scanning' && scanProgress ? (
-                <p className="mt-2 text-center text-[10.5px] text-emerald-200/80">{scanProgress}</p>
+                <p className="mt-2 text-center text-[10.5px] text-blue-200/80">{scanProgress}</p>
               ) : null}
             </div>
           ) : (
             <>
-              <ScanLine size={26} className="text-emerald-300/70" />
+              <ScanLine size={26} className="text-blue-300/70" />
               <p className="mt-3 text-sm font-semibold text-term-text">Drag & drop an EMI screenshot</p>
               <p className="mt-1 max-w-xs text-[11px] leading-relaxed text-term-muted">
                 PNG or JPEG of a product page, EMI options pop-up or the final payment screen. It never
@@ -179,7 +179,7 @@ export function ScannerPanel(props: ScannerPanelProps) {
 
         {modelUsed ? (
           <p className="mt-3 text-[10.5px] text-term-muted">
-            Extracted with <span className="num text-emerald-300">{modelUsed}</span>
+            Extracted with <span className="num text-blue-300">{modelUsed}</span>
           </p>
         ) : null}
       </Panel>
@@ -199,12 +199,12 @@ export function ScannerPanel(props: ScannerPanelProps) {
                 onClick={() => onLoadPreset(preset)}
                 className={`rounded-xl border px-3 py-2.5 text-left transition ${
                   isActive
-                    ? 'border-emerald-400/60 bg-emerald-400/10'
-                    : 'border-term-line bg-black/25 hover:border-emerald-400/35'
+                    ? 'border-blue-400/60 bg-blue-400/10'
+                    : 'border-term-line bg-black/25 hover:border-blue-400/35'
                 }`}
               >
                 <div className="flex items-start gap-2.5">
-                  <span className="num mt-0.5 text-[10px] font-bold text-emerald-300/80">
+                  <span className="num mt-0.5 text-[10px] font-bold text-blue-300/80">
                     P{index + 1}
                   </span>
                   <span>
@@ -261,8 +261,8 @@ export function ScannerPanel(props: ScannerPanelProps) {
                   onClick={() => onSelectPlan(plan.key)}
                   className={`rounded-xl border px-3 py-2 text-left transition ${
                     isActive
-                      ? 'border-emerald-400/60 bg-emerald-400/10'
-                      : 'border-term-line bg-black/25 hover:border-emerald-400/35'
+                      ? 'border-blue-400/60 bg-blue-400/10'
+                      : 'border-term-line bg-black/25 hover:border-blue-400/35'
                   }`}
                 >
                   <span className="block text-[11.5px] font-semibold text-term-text">
@@ -347,7 +347,7 @@ export function ScannerPanel(props: ScannerPanelProps) {
               Lender profile
             </span>
             <select
-              className="num mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs font-semibold text-term-text outline-none focus:border-emerald-400/50"
+              className="num mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs font-semibold text-term-text outline-none focus:border-blue-400/50"
               value={overrides.profileId}
               onChange={(event) => {
                 const nextProfile = bankProfiles.find((profile) => profile.id === event.target.value);

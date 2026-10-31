@@ -199,8 +199,134 @@ export interface ParsedLenderRow {
     monthlyEmiShownINR: number;
     nominalInterestRateShownPa?: number;
     isMarkedNoCost: boolean;
+    /** Upfront subvention printed for this tenure (Amex-style table). */
+    upfrontDiscountINR?: number;
+    /** Interest amount printed beside the rate, before the discount. */
+    interestAmountINR?: number;
+    /** "Total cost" the page prints for this tenure. */
+    totalCostINR?: number;
   }>;
   lineIndex: number;
+}
+
+/**
+ * One row of an expanded lender table, e.g. American Express prints:
+ *      EMI Plan | Interest(pa) | Discount | Total cost
+ *      ₹5,330 x 3m | ₹366 (14%) | ₹366 | ₹15,990
+ * which is a different shape from the "6 months ₹13,610/month" list.
+ */
+export interface ParsedPlanRow {
+  tenureMonths: number;
+  monthlyEmiShownINR: number;
+  nominalInterestRateShownPa?: number;
+  interestAmountINR?: number;
+  discountINR?: number;
+  totalCostINR?: number;
+  lineIndex: number;
+}
+
+/** "₹5,330 x 3m" — instalment, a cross and a bare tenure badge. */
+const EMI_CROSS_ROW = /([0-9][0-9,]{2,7})\s*[x×]\s*([0-9]{1,2})\s*m(?:onths?|os?)?\b/i;
+
+function amountsOnLine(line: string): number[] {
+  return Array.from(line.matchAll(/([0-9][0-9,]{1,7})/g))
+    .map((entry) => Number(entry[1].replace(/,/g, '')))
+    .filter((value) => Number.isFinite(value));
+}
+
+/**
+ * Reads the "₹X x Nm" table rows of an expanded lender, keeping the rate in
+ * parentheses (Interest pa), the interest amount, the upfront discount and the
+ * printed total for each tenure separately.
+ */
+export function readPlanTableRows(section: string[]): ParsedPlanRow[] {
+  const rowIndexes: Array<{ index: number; emi: number; tenure: number }> = [];
+  section.forEach((line, index) => {
+    const match = line.match(EMI_CROSS_ROW);
+    if (!match) return;
+    const tenure = Number.parseInt(match[2], 10);
+    if (!Number.isFinite(tenure) || tenure <= 0 || tenure > 36) return;
+    rowIndexes.push({ index, emi: Number(match[1].replace(/,/g, '')), tenure });
+  });
+  if (rowIndexes.length === 0) return [];
+
+  // Every row repeats the same "Total cost" cell (the price the plan adds up
+  // to), so the most frequent large amount in the table is that total.
+  const frequency = new Map<number, number>();
+  rowIndexes.forEach((row, position) => {
+    const end = rowIndexes[position + 1]?.index ?? section.length;
+    const context = section.slice(row.index, Math.min(end, row.index + 3)).join(' ');
+    for (const value of new Set(amountsOnLine(context))) {
+      if (value < 500) continue;
+      frequency.set(value, (frequency.get(value) ?? 0) + 1);
+    }
+  });
+  let tableTotal: number | undefined;
+  let tableTotalCount = 0;
+  for (const [value, count] of frequency) {
+    if (count < Math.min(2, rowIndexes.length)) continue;
+    if (count > tableTotalCount || (count === tableTotalCount && value > (tableTotal ?? 0))) {
+      tableTotal = value;
+      tableTotalCount = count;
+    }
+  }
+
+  return rowIndexes.map((row, position) => {
+    const end = rowIndexes[position + 1]?.index ?? section.length;
+    const context = section.slice(row.index, Math.min(end, row.index + 3)).join(' ');
+
+    const rateMatch = context.match(/\(\s*([0-9]+(?:\.[0-9]+)?)\s*%\s*\)/);
+    const nominalInterestRateShownPa = rateMatch ? Number.parseFloat(rateMatch[1]) : undefined;
+
+    // The interest cell is the amount sitting immediately before "(14%)".
+    const interestMatch = context.match(/([0-9][0-9,]{1,6})\s*\(\s*[0-9]+(?:\.[0-9]+)?\s*%\s*\)/);
+    const interestAmountINR = interestMatch
+      ? Number(interestMatch[1].replace(/,/g, ''))
+      : undefined;
+
+    // Leftover amounts are the discount cell; the repeated total is not one.
+    const leftovers = amountsOnLine(context).filter(
+      (value) =>
+        value !== row.emi &&
+        value !== tableTotal &&
+        value !== interestAmountINR &&
+        value >= 20,
+    );
+    const discountINR = leftovers.length > 0 ? Math.min(...leftovers) : interestAmountINR;
+
+    return {
+      tenureMonths: row.tenure,
+      monthlyEmiShownINR: row.emi,
+      nominalInterestRateShownPa:
+        nominalInterestRateShownPa !== undefined && nominalInterestRateShownPa <= 60
+          ? nominalInterestRateShownPa
+          : undefined,
+      interestAmountINR,
+      discountINR,
+      totalCostINR: tableTotal,
+      lineIndex: row.index,
+    };
+  });
+}
+
+/**
+ * The "Total cost" of a plan table doubles as the product price when the crop
+ * does not include the price block (the Amex EMI table alone shows ₹15,990).
+ */
+export function detectTableTotalCost(lines: string[]): number | undefined {
+  const rows = readPlanTableRows(lines);
+  if (rows.length < 2) return undefined;
+  const totals = rows
+    .map((row) => row.totalCostINR)
+    .filter((value): value is number => typeof value === 'number');
+  if (totals.length === 0) return undefined;
+  const value = totals[0];
+  // Sanity: the total has to agree with instalment × tenure on at least one row.
+  const agrees = rows.some((row) => {
+    const sum = row.monthlyEmiShownINR * row.tenureMonths;
+    return Math.abs(sum - value) <= Math.max(120, value * 0.06);
+  });
+  return agrees ? value : undefined;
 }
 
 const FEE_ROW = /processing\s*fee|\bfee\s*of\b/i;
@@ -362,7 +488,24 @@ export function parseEmiModalLenders(lines: string[], priceINR: number): ParsedL
 
     // Expanded tenure rows: tenure, instalment and the bank's annual rate.
     const plans: ParsedLenderRow['plans'] = [];
-    for (let index = 0; index < section.length; index += 1) {
+    const tableRows = readPlanTableRows(section);
+    if (tableRows.length > 0) {
+      // "₹5,330 x 3m | ₹366 (14%) | ₹366 | ₹15,990" — one plan per printed row.
+      const sectionText = section.join(' ');
+      const sectionClaimsNoCost = /no[\s-]*cost|0\s*%\s*interest|zero\s*cost/i.test(sectionText);
+      for (const row of tableRows) {
+        plans.push({
+          tenureMonths: row.tenureMonths,
+          monthlyEmiShownINR: row.monthlyEmiShownINR,
+          nominalInterestRateShownPa: row.nominalInterestRateShownPa,
+          isMarkedNoCost: sectionClaimsNoCost,
+          upfrontDiscountINR: row.discountINR,
+          interestAmountINR: row.interestAmountINR,
+          totalCostINR: row.totalCostINR,
+        });
+      }
+    }
+    for (let index = 0; plans.length === 0 && index < section.length; index += 1) {
       const tenureMatch = section[index].match(TENURE_TOKEN);
       if (!tenureMatch) continue;
       const tenureMonths = Number.parseInt(tenureMatch[1], 10);
@@ -540,7 +683,10 @@ export function parseRawOcrTextToFinTechData(rawText: string): ExtractedScreensh
   const highPrices = Array.from(new Set(extractedNumbers)).filter(
     (amount) => amount >= 1500 && !mrpValues.has(amount),
   );
+  // A cropped EMI table has no price block: the repeated "Total cost" cell is the
+  // price the instalments add up to, so it beats any single row amount.
   const listedProductPriceINR =
+    detectTableTotalCost(lines) ??
     priceCandidates[0]?.amount ??
     (highPrices.length > 0 ? Math.max(...highPrices) : Math.max(...extractedNumbers, 60000));
 
@@ -874,7 +1020,10 @@ export function parseRawOcrTextToFinTechData(rawText: string): ExtractedScreensh
             plan.nominalInterestRateShownPa,
             plan.isMarkedNoCost,
           ),
-          upfrontInterestDiscountShownINR,
+          // A table prints the merchant's subvention per tenure, so that cell wins
+          // over the one discount figure that applies to the whole page.
+          upfrontInterestDiscountShownINR:
+            plan.upfrontDiscountINR ?? upfrontInterestDiscountShownINR,
           nominalInterestRateShownPa: plan.nominalInterestRateShownPa,
           processingFeeShownINR: lender.processingFeeINR ?? processingFeeShownINR,
         });

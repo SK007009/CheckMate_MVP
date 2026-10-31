@@ -73,7 +73,7 @@ export function DossierModal({
             value={complainantName}
             onChange={(event) => onComplainantChange(event.target.value)}
             placeholder="Full name, address, phone, email"
-            className="mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+            className="mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
           />
         </label>
         <label className="block">
@@ -84,7 +84,7 @@ export function DossierModal({
             value={platformName}
             onChange={(event) => onPlatformChange(event.target.value)}
             placeholder="Amazon India"
-            className="mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-emerald-400/50"
+            className="mt-1 w-full rounded-lg border border-term-line bg-black/35 px-2.5 py-2 text-xs text-term-text outline-none focus:border-blue-400/50"
           />
         </label>
       </div>

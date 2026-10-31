@@ -22,7 +22,7 @@ export function RightsPanel({ verdict, extracted, onOpenDossier, hasAudit }: Rig
           : 'good';
 
   const scoreColor =
-    verdict.legalityScore >= 80 ? '#2ee6a8' : verdict.legalityScore >= 55 ? '#ffb020' : '#ff5c68';
+    verdict.legalityScore >= 80 ? '#3b82f6' : verdict.legalityScore >= 55 ? '#ffb020' : '#ff5c68';
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,7 +95,7 @@ export function RightsPanel({ verdict, extracted, onOpenDossier, hasAudit }: Rig
         }
       >
         {verdict.violations.length === 0 ? (
-          <div className="flex items-start gap-2 rounded-xl border border-emerald-400/25 bg-emerald-400/5 px-3 py-3 text-[11px] leading-relaxed text-emerald-200">
+          <div className="flex items-start gap-2 rounded-xl border border-blue-400/25 bg-blue-400/5 px-3 py-3 text-[11px] leading-relaxed text-blue-200">
             <CheckCircle2 size={14} className="mt-0.5 shrink-0" />
             Every rule in the database passed for this screenshot: the all-inclusive cost, the GST treatment and any
             add-ons appear to be disclosed. Load a demo preset to see the judge in action.
@@ -155,7 +155,7 @@ export function RightsPanel({ verdict, extracted, onOpenDossier, hasAudit }: Rig
                     </div>
                   ) : null}
 
-                  <p className="mt-2 border-t border-white/5 pt-2 text-[10.5px] leading-relaxed text-emerald-200/90">
+                  <p className="mt-2 border-t border-white/5 pt-2 text-[10.5px] leading-relaxed text-blue-200/90">
                     <span className="font-semibold">Remedy:</span> {rule.consumerRemedy}
                   </p>
                 </li>

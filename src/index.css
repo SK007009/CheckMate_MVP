@@ -1,13 +1,13 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-term-bg: #07090d;
-  --color-term-panel: #0d1117;
-  --color-term-raised: #121821;
-  --color-term-line: #1f2733;
-  --color-term-muted: #8b98a9;
+  --color-term-bg: #030712;
+  --color-term-panel: #0a1220;
+  --color-term-raised: #0e1a2c;
+  --color-term-line: #1b2a41;
+  --color-term-muted: #8b9bb1;
   --color-term-text: #e8edf4;
-  --color-term-accent: #2ee6a8;
+  --color-term-accent: #3b82f6;
   --color-term-danger: #ff5c68;
   --color-term-warn: #ffb020;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', 'Consolas', ui-monospace, monospace;
@@ -59,11 +59,11 @@
   }
 
   .panel {
-    background: linear-gradient(180deg, rgba(23, 30, 40, 0.75) 0%, rgba(13, 17, 23, 0.9) 100%);
+    background: linear-gradient(180deg, rgba(17, 27, 45, 0.82) 0%, rgba(5, 10, 19, 0.92) 100%);
     border: 1px solid var(--color-term-line);
   }
 
   .grid-glow {
-    background-image: radial-gradient(60% 60% at 50% 0%, rgba(46, 230, 168, 0.09) 0%, transparent 70%);
+    background-image: radial-gradient(60% 60% at 50% 0%, rgba(37, 99, 235, 0.12) 0%, transparent 70%);
   }
 }

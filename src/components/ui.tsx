@@ -23,14 +23,14 @@ export function Panel({
       <header className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           {icon ? (
-            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-300">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-400/10 text-blue-300">
               {icon}
             </span>
           ) : null}
           <div>
             <div className="flex items-center gap-2">
               {step ? (
-                <span className="num text-[10px] font-bold tracking-widest text-emerald-300/80">{step}</span>
+                <span className="num text-[10px] font-bold tracking-widest text-blue-300/80">{step}</span>
               ) : null}
               <h2 className="text-[15px] font-semibold tracking-tight text-term-text">{title}</h2>
             </div>
@@ -55,7 +55,7 @@ export function Badge({
 }) {
   const tones: Record<string, string> = {
     neutral: 'bg-white/5 text-term-muted border-white/10',
-    good: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/25',
+    good: 'bg-blue-400/10 text-blue-300 border-blue-400/25',
     warn: 'bg-amber-400/10 text-amber-300 border-amber-400/25',
     danger: 'bg-rose-500/10 text-rose-300 border-rose-500/30',
     info: 'bg-sky-400/10 text-sky-300 border-sky-400/25',
@@ -82,7 +82,7 @@ export function StatTile({
 }) {
   const valueTone: Record<string, string> = {
     neutral: 'text-term-text',
-    good: 'text-emerald-300',
+    good: 'text-blue-300',
     warn: 'text-amber-300',
     danger: 'text-rose-300',
   };
@@ -110,7 +110,7 @@ export function Toggle({
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className="flex w-full items-center justify-between gap-3 rounded-xl border border-term-line bg-black/25 px-3 py-2 text-left transition hover:border-emerald-400/40"
+      className="flex w-full items-center justify-between gap-3 rounded-xl border border-term-line bg-black/25 px-3 py-2 text-left transition hover:border-blue-400/40"
       aria-pressed={checked}
     >
       <span>
@@ -119,7 +119,7 @@ export function Toggle({
       </span>
       <span
         className={`relative h-5 w-9 shrink-0 rounded-full transition ${
-          checked ? 'bg-emerald-400' : 'bg-white/15'
+          checked ? 'bg-blue-400' : 'bg-white/15'
         }`}
       >
         <span
@@ -154,7 +154,7 @@ export function NumberField({
   return (
     <label className="block">
       <span className="text-[10px] font-semibold tracking-widest text-term-muted uppercase">{label}</span>
-      <span className="mt-1 flex items-center gap-1 rounded-lg border border-term-line bg-black/35 px-2.5 py-1.5 focus-within:border-emerald-400/50">
+      <span className="mt-1 flex items-center gap-1 rounded-lg border border-term-line bg-black/35 px-2.5 py-1.5 focus-within:border-blue-400/50">
         {prefix ? <span className="num text-xs text-term-muted">{prefix}</span> : null}
         <input
           type="number"
@@ -243,9 +243,9 @@ export function Button({
 }) {
   const variants: Record<string, string> = {
     primary:
-      'bg-emerald-400 text-[#05130e] hover:bg-emerald-300 disabled:bg-white/10 disabled:text-term-muted',
+      'bg-blue-600 text-white hover:bg-blue-500 disabled:bg-white/10 disabled:text-term-muted',
     outline:
-      'border border-term-line text-term-text hover:border-emerald-400/50 hover:text-emerald-200 disabled:opacity-40',
+      'border border-term-line text-term-text hover:border-blue-400/50 hover:text-blue-200 disabled:opacity-40',
     ghost: 'text-term-muted hover:text-term-text disabled:opacity-40',
     danger: 'border border-rose-500/40 text-rose-300 hover:bg-rose-500/10 disabled:opacity-40',
   };
